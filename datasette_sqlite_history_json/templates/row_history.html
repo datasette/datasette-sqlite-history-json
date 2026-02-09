@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Row history - {{ table }} - {{ database }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ urls.static_plugins('datasette_sqlite_history_json', 'history.css') }}">
+{% endblock %}
+
+{% block crumbs %}
+{{ crumbs.nav(request=request, database=database, table=table) }}
+{% endblock %}
+
+{% block content %}
+<h1>Row history: {% if row_url %}<a href="{{ row_url }}">{% endif %}{{ table }} {% for col, val in pk_values.items() %}{{ col }}={{ val }}{% if not loop.last %}, {% endif %}{% endfor %}{% if row_url %}</a>{% endif %}</h1>
+
+<div id="history-entries">
+    <p>Loading...</p>
+</div>
+
+<script type="module">
+import { renderRowHistory } from "{{ urls.static_plugins('datasette_sqlite_history_json', 'history.js') }}";
+renderRowHistory({
+    apiUrl: "{{ urls.path('/-/history-json/' + database + '/' + table + '/' + pks_string + '.json') }}",
+    database: "{{ database }}",
+    table: "{{ table }}",
+    entriesEl: document.getElementById("history-entries"),
+});
+</script>
+{% endblock %}

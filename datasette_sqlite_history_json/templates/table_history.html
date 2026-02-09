@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}History for {{ table }} - {{ database }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ urls.static_plugins('datasette_sqlite_history_json', 'history.css') }}">
+{% endblock %}
+
+{% block crumbs %}
+{{ crumbs.nav(request=request, database=database, table=table) }}
+{% endblock %}
+
+{% block content %}
+<h1>History for {{ table }}{% if not is_tracked %} <span class="tracking-badge tracking-disabled">(tracking disabled)</span>{% endif %}</h1>
+
+<div class="history-filters">
+    <button class="filter-btn active" data-operation="">All</button>
+    <button class="filter-btn" data-operation="insert">Insert</button>
+    <button class="filter-btn" data-operation="update">Update</button>
+    <button class="filter-btn" data-operation="delete">Delete</button>
+</div>
+
+<div id="history-entries">
+    <p>Loading...</p>
+</div>
+
+<div id="history-pagination" class="pagination"></div>
+
+<script type="module">
+import { renderTableHistory } from "{{ urls.static_plugins('datasette_sqlite_history_json', 'history.js') }}";
+renderTableHistory({
+    apiUrl: "{{ urls.path('/-/history-json/' + database + '/' + table + '.json') }}",
+    database: "{{ database }}",
+    table: "{{ table }}",
+    entriesEl: document.getElementById("history-entries"),
+    paginationEl: document.getElementById("history-pagination"),
+    filtersEl: document.querySelector(".history-filters"),
+});
+</script>
+{% endblock %}

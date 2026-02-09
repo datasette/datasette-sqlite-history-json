@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Enable tracking for {{ table }} - {{ database }}{% endblock %}
+
+{% block content %}
+<h1>Enable tracking for {{ table }}</h1>
+
+<p>This will create an audit table and triggers to track all changes to <strong>{{ table }}</strong> in <strong>{{ database }}</strong>.</p>
+
+<p>Existing rows will be recorded as initial inserts in the audit log.</p>
+
+<form method="post">
+    <input type="hidden" name="csrftoken" value="{{ csrftoken() }}">
+    <p>
+        <button type="submit">Enable tracking</button>
+    </p>
+</form>
+{% endblock %}

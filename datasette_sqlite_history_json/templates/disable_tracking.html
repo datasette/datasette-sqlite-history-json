@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Disable tracking for {{ table }} - {{ database }}{% endblock %}
+
+{% block content %}
+<h1>Disable tracking for {{ table }}</h1>
+
+<p>This will remove the triggers that track changes to <strong>{{ table }}</strong> in <strong>{{ database }}</strong>.</p>
+
+<p>The audit history will be preserved and can still be viewed. You can re-enable tracking at any time.</p>
+
+<form method="post">
+    <input type="hidden" name="csrftoken" value="{{ csrftoken() }}">
+    <p>
+        <button type="submit">Disable tracking</button>
+    </p>
+</form>
+{% endblock %}

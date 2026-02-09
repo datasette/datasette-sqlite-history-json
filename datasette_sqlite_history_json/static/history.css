@@ -1,0 +1,132 @@
+.history-filters {
+    margin-bottom: 1em;
+    display: flex;
+    gap: 0.5em;
+}
+.filter-btn {
+    padding: 0.3em 0.8em;
+    border: 1px solid #ccc;
+    background: #f8f8f8;
+    cursor: pointer;
+    border-radius: 3px;
+}
+.filter-btn.active {
+    background: #0366d6;
+    color: white;
+    border-color: #0366d6;
+}
+.history-entry {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 1em;
+    padding: 0.8em;
+}
+.history-entry-header {
+    display: flex;
+    gap: 0.8em;
+    align-items: center;
+    margin-bottom: 0.5em;
+    flex-wrap: wrap;
+}
+.op-badge {
+    display: inline-block;
+    padding: 0.15em 0.5em;
+    border-radius: 3px;
+    font-size: 0.85em;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+.op-insert { background: #dcffe4; color: #22863a; }
+.op-update { background: #fff5b1; color: #735c0f; }
+.op-delete { background: #ffdce0; color: #cb2431; }
+.history-timestamp {
+    color: #586069;
+    font-size: 0.9em;
+}
+.history-pk {
+    font-size: 0.9em;
+}
+.history-pk a {
+    color: #0366d6;
+}
+.history-values {
+    margin-top: 0.5em;
+}
+.history-values table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.9em;
+}
+.history-values th,
+.history-values td {
+    border: 1px solid #ddd;
+    padding: 0.3em 0.6em;
+    text-align: left;
+}
+.history-values th {
+    background: #f6f8fa;
+    font-weight: 600;
+}
+.diff-old {
+    background: #ffeef0;
+    color: #cb2431;
+    text-decoration: line-through;
+}
+.diff-new {
+    background: #e6ffed;
+    color: #22863a;
+}
+.diff-arrow {
+    color: #586069;
+    padding: 0 0.3em;
+}
+.state-toggle {
+    margin-top: 0.5em;
+}
+.state-toggle summary {
+    cursor: pointer;
+    color: #0366d6;
+    font-size: 0.9em;
+}
+.state-content {
+    margin-top: 0.5em;
+}
+.state-content table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.9em;
+}
+.state-content th,
+.state-content td {
+    border: 1px solid #ddd;
+    padding: 0.3em 0.6em;
+    text-align: left;
+}
+.state-content th {
+    background: #f6f8fa;
+    font-weight: 600;
+}
+.pagination {
+    display: flex;
+    gap: 1em;
+    align-items: center;
+    margin-top: 1em;
+}
+.pagination button {
+    padding: 0.3em 0.8em;
+}
+.pagination .page-info {
+    color: #586069;
+}
+.tracking-badge {
+    font-size: 0.6em;
+    font-weight: normal;
+    vertical-align: middle;
+}
+.tracking-disabled {
+    color: #cb2431;
+}
+.no-entries {
+    color: #586069;
+    font-style: italic;
+}
