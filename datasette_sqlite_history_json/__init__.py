@@ -38,6 +38,14 @@ async def _has_history(db, table):
     return result.single_value() > 0
 
 
+async def _has_groups_table(db):
+    """Check if the _history_json groups table exists."""
+    result = await db.execute(
+        "select count(*) from sqlite_master where type='table' and name='_history_json'"
+    )
+    return result.single_value() > 0
+
+
 async def _get_pk_columns(db, table):
     """Return list of PK column names for a table."""
     result = await db.execute(f"PRAGMA table_info([{table}])")
@@ -216,29 +224,43 @@ async def table_history_api(request, datasette):
     page = int(request.args.get("page", "1"))
     page_size = 50
     operation = request.args.get("operation", None)
+    group = request.args.get("group", None)
 
     audit_name = _audit_table_name(table)
     is_tracked = await _is_tracked(db, table)
     pk_columns = await _get_pk_columns(db, table)
+    has_groups = await _has_groups_table(db)
+
+    # Build WHERE conditions
+    where_parts = []
+    where_params = []
+    if operation:
+        where_parts.append("a.operation = ?")
+        where_params.append(operation)
+    if group is not None:
+        where_parts.append("a.[group] = ?")
+        where_params.append(int(group))
+    where_clause = (" where " + " and ".join(where_parts)) if where_parts else ""
 
     # Count total entries
-    count_sql = f"select count(*) from [{audit_name}]"
-    count_params = []
-    if operation:
-        count_sql += " where operation = ?"
-        count_params.append(operation)
-    result = await db.execute(count_sql, count_params)
+    count_sql = f"select count(*) from [{audit_name}] a{where_clause}"
+    result = await db.execute(count_sql, where_params)
     total_count = result.single_value()
 
-    # Fetch page of entries
+    # Fetch page of entries (join to _history_json for group note if available)
     offset = (page - 1) * page_size
-    sql = f"select * from [{audit_name}]"
-    params = []
-    if operation:
-        sql += " where operation = ?"
-        params.append(operation)
-    sql += " order by id desc limit ? offset ?"
-    params.extend([page_size, offset])
+    if has_groups:
+        sql = (
+            f"select a.*, g.note as group_note from [{audit_name}] a "
+            f"left join [_history_json] g on a.[group] = g.id"
+            f"{where_clause} order by a.id desc limit ? offset ?"
+        )
+    else:
+        sql = (
+            f"select a.* from [{audit_name}] a"
+            f"{where_clause} order by a.id desc limit ? offset ?"
+        )
+    params = list(where_params) + [page_size, offset]
 
     result = await db.execute(sql, params)
     columns = [desc[0] for desc in result.description]
@@ -254,15 +276,17 @@ async def table_history_api(request, datasette):
             if row_dict["updated_values"] is not None
             else None
         )
-        entries.append(
-            {
-                "id": row_dict["id"],
-                "timestamp": row_dict["timestamp"],
-                "operation": row_dict["operation"],
-                "pk": pk,
-                "updated_values": updated_values,
-            }
-        )
+        entry = {
+            "id": row_dict["id"],
+            "timestamp": row_dict["timestamp"],
+            "operation": row_dict["operation"],
+            "pk": pk,
+            "updated_values": updated_values,
+        }
+        if row_dict.get("group") is not None:
+            entry["group"] = row_dict["group"]
+            entry["group_note"] = row_dict.get("group_note")
+        entries.append(entry)
 
     return Response.json(
         {
@@ -368,16 +392,18 @@ async def row_history_api(request, datasette):
             row = conn.execute(state_sql, params).fetchone()
             state = json.loads(row[0]) if row and row[0] else None
 
-            results.append(
-                {
-                    "id": entry["id"],
-                    "timestamp": entry["timestamp"],
-                    "operation": entry["operation"],
-                    "pk": entry["pk"],
-                    "updated_values": entry["updated_values"],
-                    "state": state,
-                }
-            )
+            result_entry = {
+                "id": entry["id"],
+                "timestamp": entry["timestamp"],
+                "operation": entry["operation"],
+                "pk": entry["pk"],
+                "updated_values": entry["updated_values"],
+                "state": state,
+            }
+            if entry.get("group") is not None:
+                result_entry["group"] = entry["group"]
+                result_entry["group_note"] = entry.get("group_note")
+            results.append(result_entry)
 
         # Compute diffs (entries are newest-first)
         for i, entry in enumerate(results):
