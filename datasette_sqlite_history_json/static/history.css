@@ -43,6 +43,21 @@
     color: #586069;
     font-size: 0.9em;
 }
+.group-badge {
+    display: inline-block;
+    padding: 0.15em 0.5em;
+    border-radius: 3px;
+    font-size: 0.85em;
+    background: #e1e4e8;
+    color: #24292e;
+}
+.group-badge a {
+    color: #0366d6;
+    text-decoration: none;
+}
+.group-badge a:hover {
+    text-decoration: underline;
+}
 .history-pk {
     font-size: 0.9em;
 }

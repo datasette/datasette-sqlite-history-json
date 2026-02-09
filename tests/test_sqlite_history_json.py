@@ -456,3 +456,87 @@ async def test_history_after_disable(ds, db_path):
     assert data["ok"] is True
     assert data["is_tracked"] is False
     assert data["total_count"] > 0
+
+
+@pytest.mark.asyncio
+async def test_table_history_api_change_groups(ds, db_path):
+    """Changes made inside a change_group include group and group_note."""
+    conn = sqlite3.connect(str(db_path))
+    sqlite_history_json.enable_tracking(conn, "items")
+    conn.commit()
+
+    with sqlite_history_json.change_group(conn, note="bulk update") as group_id:
+        conn.execute("update items set price = 12.99 where id = 1")
+        conn.execute("update items set price = 29.99 where id = 2")
+    conn.commit()
+    conn.close()
+
+    response = await ds.client.get("/-/history-json/test/items.json")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["ok"] is True
+
+    # The two updates should have group info
+    grouped = [e for e in data["entries"] if e.get("group") is not None]
+    assert len(grouped) == 2
+    for entry in grouped:
+        assert entry["group"] == group_id
+        assert entry["group_note"] == "bulk update"
+
+    # The initial populate inserts should not have group info
+    ungrouped = [e for e in data["entries"] if "group" not in e]
+    assert len(ungrouped) > 0
+
+
+@pytest.mark.asyncio
+async def test_table_history_api_filter_by_group(ds, db_path):
+    """?group= filters to entries from that change group."""
+    conn = sqlite3.connect(str(db_path))
+    sqlite_history_json.enable_tracking(conn, "items")
+    conn.commit()
+
+    with sqlite_history_json.change_group(conn, note="first batch") as gid1:
+        conn.execute("update items set price = 12.99 where id = 1")
+
+    with sqlite_history_json.change_group(conn, note="second batch") as gid2:
+        conn.execute("update items set price = 29.99 where id = 2")
+
+    conn.commit()
+    conn.close()
+
+    response = await ds.client.get(f"/-/history-json/test/items.json?group={gid1}")
+    data = response.json()
+    assert data["ok"] is True
+    assert data["total_count"] == 1
+    assert all(e["group"] == gid1 for e in data["entries"])
+
+    response = await ds.client.get(f"/-/history-json/test/items.json?group={gid2}")
+    data = response.json()
+    assert data["ok"] is True
+    assert data["total_count"] == 1
+    assert all(e["group"] == gid2 for e in data["entries"])
+
+
+@pytest.mark.asyncio
+async def test_row_history_api_change_groups(ds, db_path):
+    """Row history entries include group info when present."""
+    conn = sqlite3.connect(str(db_path))
+    sqlite_history_json.enable_tracking(conn, "items")
+    conn.commit()
+
+    with sqlite_history_json.change_group(conn, note="price change") as group_id:
+        conn.execute("update items set price = 12.99 where id = 1")
+    conn.commit()
+    conn.close()
+
+    response = await ds.client.get("/-/history-json/test/items/1.json")
+    assert response.status_code == 200
+    data = response.json()
+    entries = data["entries"]
+
+    # Most recent entry (the update) should have group info
+    assert entries[0]["group"] == group_id
+    assert entries[0]["group_note"] == "price change"
+
+    # The initial insert should not have group info
+    assert "group" not in entries[-1]

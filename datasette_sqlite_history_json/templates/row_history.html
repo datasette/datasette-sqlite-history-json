@@ -24,6 +24,7 @@ renderRowHistory({
     database: "{{ database }}",
     table: "{{ table }}",
     entriesEl: document.getElementById("history-entries"),
+    tableHistoryUrl: "{{ urls.path('/-/history-json/' + database + '/' + table) }}",
 });
 </script>
 {% endblock %}

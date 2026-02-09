@@ -28,6 +28,23 @@ function renderEntryHeader(entry, options) {
     ts.textContent = entry.timestamp;
     header.appendChild(ts);
 
+    if (entry.group !== undefined && entry.group !== null) {
+        const groupSpan = document.createElement("span");
+        groupSpan.className = "group-badge";
+        const groupText = entry.group_note
+            ? `group: ${entry.group_note}`
+            : `group #${entry.group}`;
+        if (options && options.tableHistoryUrl) {
+            const a = document.createElement("a");
+            a.href = `${options.tableHistoryUrl}?group=${entry.group}`;
+            a.textContent = groupText;
+            groupSpan.appendChild(a);
+        } else {
+            groupSpan.textContent = groupText;
+        }
+        header.appendChild(groupSpan);
+    }
+
     if (options && options.showPkLink && entry.pk) {
         const pkSpan = document.createElement("span");
         pkSpan.className = "history-pk";
@@ -129,7 +146,7 @@ export async function renderTableHistory(options) {
         for (const entry of data.entries) {
             const el = document.createElement("div");
             el.className = "history-entry";
-            el.appendChild(renderEntryHeader(entry, { showPkLink: true, rowHistoryUrlBase }));
+            el.appendChild(renderEntryHeader(entry, { showPkLink: true, rowHistoryUrlBase, tableHistoryUrl: rowHistoryUrlBase }));
             const vals = renderUpdatedValues(entry.updated_values);
             if (vals) el.appendChild(vals);
             entriesEl.appendChild(el);
@@ -175,7 +192,7 @@ export async function renderTableHistory(options) {
 }
 
 export async function renderRowHistory(options) {
-    const { apiUrl, database, table, entriesEl } = options;
+    const { apiUrl, database, table, entriesEl, tableHistoryUrl } = options;
 
     entriesEl.innerHTML = "<p>Loading...</p>";
     const resp = await fetch(apiUrl);
@@ -195,7 +212,7 @@ export async function renderRowHistory(options) {
     for (const entry of data.entries) {
         const el = document.createElement("div");
         el.className = "history-entry";
-        el.appendChild(renderEntryHeader(entry));
+        el.appendChild(renderEntryHeader(entry, { tableHistoryUrl }));
 
         if (entry.diff) {
             el.appendChild(renderDiff(entry.diff));
